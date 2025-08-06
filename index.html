@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>April英语游戏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#7B61FF', // 紫色主色调，适合英语学习类应用
+                        secondary: '#36D399',
+                        danger: '#F87272',
+                        neutral: '#64748B',
+                        light: '#F8FAFC',
+                        dark: '#1E293B'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .btn-hover {
+                @apply transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1;
+            }
+            .card-effect {
+                @apply bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300;
+            }
+            .loading-spinner {
+                @apply animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full inline-block;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen font-sans text-dark">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-primary flex items-center">
+                <i class="fa fa-graduation-cap mr-2"></i>April英语游戏
+            </h1>
+            <div class="flex items-center space-x-4">
+                <div id="timer" class="hidden md:flex items-center bg-light px-3 py-1 rounded-lg border border-gray-200">
+                    <i class="fa fa-clock-o text-neutral mr-2"></i>
+                    <span id="time-display">00:00</span>
+                </div>
+                <button id="reset-btn" class="bg-neutral hover:bg-neutral/80 text-white px-4 py-2 rounded-lg btn-hover hidden">
+                    <i class="fa fa-refresh mr-1"></i> 重新开始
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- 初始页面：批量添加单词 -->
+        <section id="word-input-section" class="card-effect p-6 md:p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6 text-center">添加学习单词</h2>
+            
+            <div class="mb-8">
+                <h3 class="font-semibold text-lg mb-3">批量导入单词</h3>
+                <p class="text-gray-600 text-sm mb-3">请输入英文单词，用空格或回车分隔（例如：apple banana cat）</p>
+                <textarea id="bulk-words" rows="6" 
+                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                          placeholder="在这里输入多个英文单词，用空格或回车分隔"></textarea>
+                <div class="mt-3 flex justify-end">
+                    <button id="import-words" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg btn-hover flex items-center">
+                        <i class="fa fa-upload mr-2"></i>导入并生成释义
+                        <span id="import-loading" class="ml-2 hidden"><span class="loading-spinner"></span></span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 分享链接区域 -->
+            <div id="share-link-section" class="mb-6 hidden">
+                <div class="bg-purple-50 border border-purple-100 rounded-lg p-4">
+                    <h3 class="font-semibold text-lg mb-3 flex items-center">
+                        <i class="fa fa-link text-primary mr-2"></i>游戏分享链接
+                    </h3>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="game-share-link" readonly
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white"
+                               placeholder="生成的游戏链接将显示在这里">
+                        <button id="copy-link-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg btn-hover whitespace-nowrap">
+                            <i class="fa fa-copy mr-1"></i>复制链接
+                        </button>
+                    </div>
+                    <p class="text-gray-500 text-xs mt-2">
+                        <i class="fa fa-info-circle mr-1"></i>复制此链接，他人可直接打开并使用相同的单词列表进行游戏
+                    </p>
+                </div>
+            </div>
+            
+            <div id="word-list" class="mt-6">
+                <h3 class="font-semibold text-lg mb-3 flex items-center">
+                    <i class="fa fa-list-ul text-neutral mr-2"></i>已添加单词（可点击释义进行修改）
+                </h3>
+                <ul id="words-container" class="space-y-2 max-h-60 overflow-y-auto pr-2">
+                    <li class="text-gray-500 italic text-center py-4">尚未添加单词</li>
+                </ul>
+                
+                <button id="start-game" class="w-full mt-6 bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-4 rounded-lg btn-hover opacity-50 cursor-not-allowed" disabled>
+                    <i class="fa fa-play-circle mr-2"></i>开始游戏
+                </button>
+            </div>
+        </section>
+        
+        <!-- 游戏区域 -->
+        <section id="game-section" class="hidden card-effect p-6 md:p-8 mb-8">
+            <div class="text-center mb-8">
+                <div class="inline-block bg-light px-4 py-2 rounded-full mb-2 text-sm font-medium">
+                    <span id="current-word-index">1</span> / <span id="total-words">0</span>
+                </div>
+                <h2 id="current-word" class="text-[clamp(2rem,5vw,3rem)] font-bold text-primary"></h2>
+            </div>
+            
+            <div id="options-container" class="space-y-4 mb-8">
+                <!-- 选项按钮将通过JS动态生成 -->
+                <div class="text-center py-8" id="options-loading">
+                    <span class="loading-spinner"></span>
+                    <p class="mt-2 text-gray-500">加载选项中...</p>
+                </div>
+            </div>
+            
+            <div id="feedback" class="hidden mb-6 p-4 rounded-lg text-center font-medium"></div>
+        </section>
+        
+        <!-- 结果统计区域 -->
+        <section id="results-section" class="hidden card-effect p-6 md:p-8">
+            <h2 class="text-2xl font-bold mb-6 text-center">游戏结果</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
+                <div class="bg-light p-5 rounded-lg">
+                    <div class="text-3xl font-bold text-primary mb-1" id="total-questions">0</div>
+                    <div class="text-gray-600">总单词数</div>
+                </div>
+                <div class="bg-light p-5 rounded-lg">
+                    <div class="text-3xl font-bold text-secondary mb-1" id="accuracy">0%</div>
+                    <div class="text-gray-600">正确率</div>
+                </div>
+                <div class="bg-light p-5 rounded-lg">
+                    <div class="text-3xl font-bold text-neutral mb-1" id="total-time">00:00</div>
+                    <div class="text-gray-600">总用时</div>
+                </div>
+            </div>
+            
+            <div id="mistakes-section" class="mb-8">
+                <h3 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fa fa-exclamation-circle text-danger mr-2"></i>错误单词回顾
+                </h3>
+                <div id="mistakes-list" class="space-y-4">
+                    <!-- 错误单词将通过JS动态生成 -->
+                </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="review-again" class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg btn-hover">
+                    <i class="fa fa-repeat mr-2"></i>重新练习错题
+                </button>
+                <button id="new-game" class="flex-1 bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-4 rounded-lg btn-hover">
+                    <i class="fa fa-plus-circle mr-2"></i>添加新单词
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white mt-8 py-6 shadow-inner">
+        <div class="container mx-auto px-4 text-center text-gray-600">
+            <p>April英语游戏 &copy; 2023 - 提升你的词汇量</p>
+        </div>
+    </footer>
+
+    <script>
+        // 大幅扩展的本地随机中文词汇库
+        const localRandomWords = [
+            // 动作类
+            "飞翔", "跑步", "跳跃", "游泳", "舞蹈", "歌唱", "绘画", "写作", "阅读", "计算",
+            "思考", "学习", "教学", "工作", "休息", "玩耍", "战斗", "防御", "进攻", "撤退",
+            "购买", "销售", "交换", "赠送", "接受", "拒绝", "创造", "破坏", "建设", "拆除",
+            
+            // 自然类
+            "阳光", "月亮", "星星", "云朵", "彩虹", "雷电", "风雨", "冰雪", "火焰", "水滴",
+            "高山", "大海", "森林", "沙漠", "草原", "河流", "湖泊", "岛屿", "峡谷", "平原",
+            "岩石", "土壤", "空气", "氧气", "二氧化碳", "植物", "花朵", "果实", "种子", "根须",
+            
+            // 交通工具
+            "汽车", "火车", "飞机", "轮船", "自行车", "火箭", "潜艇", "马车", "摩托车", "电动车",
+            "公交车", "出租车", "货车", "卡车", "地铁", "轻轨", "缆车", "渡船", "热气球", "直升机",
+            
+            // 食物
+            "苹果", "香蕉", "橙子", "西瓜", "草莓", "葡萄", "菠萝", "芒果", "荔枝", "桃子",
+            "米饭", "面条", "面包", "牛奶", "鸡蛋", "牛肉", "猪肉", "鸡肉", "鱼肉", "蔬菜",
+            
+            // 动物
+            "老虎", "狮子", "大象", "熊猫", "猴子", "兔子", "狗", "猫", "鸟", "鱼",
+            "蛇", "青蛙", "蚂蚁", "蜜蜂", "蝴蝶", "蜻蜓", "蜘蛛", "老鼠", "牛", "羊",
+            
+            // 颜色
+            "红色", "蓝色", "绿色", "黄色", "紫色", "黑色", "白色", "灰色", "粉色", "橙色",
+            "棕色", "青色", "金色", "银色", "米色", "深蓝色", "浅蓝色", "浅绿色",
+            
+            // 情感
+            "快乐", "悲伤", "愤怒", "惊讶", "恐惧", "爱", "恨", "喜欢", "讨厌", "平静",
+            "兴奋", "沮丧", "希望", "绝望", "信任", "怀疑", "满意", "失望", "骄傲", "谦虚",
+            
+            // 时间与季节
+            "春天", "夏天", "秋天", "冬天", "早晨", "中午", "晚上", "昨天", "今天", "明天",
+            "星期", "月份", "年份", "小时", "分钟", "秒钟", "过去", "现在", "未来",
+            
+            // 地点
+            "学校", "医院", "商店", "公园", "家", "办公室", "工厂", "农场", "图书馆", "博物馆",
+            "电影院", "剧院", "餐馆", "酒店", "银行", "邮局", "车站", "机场", "港口", "市场"
+        ];
+
+        // 多个备用API，提高联网生成成功率
+        const wordApis = [
+            'https://random-word-api.vercel.app/api?words=1&lang=zh',
+            'https://v1.hitokoto.cn?c=f&encode=text',
+            'https://api.quotable.io/random?tags=word'
+        ];
+
+        // 游戏数据存储
+        const gameData = {
+            words: [],          // 存储所有单词 {word, correctMeaning}
+            currentWordIndex: 0,
+            startTime: null,
+            timerInterval: null,
+            secondsElapsed: 0,
+            attempts: {},       // 记录每个单词的尝试次数
+            mistakes: []        // 记录错误的单词
+        };
+
+        // DOM 元素
+        const elements = {
+            wordInputSection: document.getElementById('word-input-section'),
+            gameSection: document.getElementById('game-section'),
+            resultsSection: document.getElementById('results-section'),
+            wordsContainer: document.getElementById('words-container'),
+            startGameBtn: document.getElementById('start-game'),
+            currentWord: document.getElementById('current-word'),
+            currentWordIndex: document.getElementById('current-word-index'),
+            totalWords: document.getElementById('total-words'),
+            optionsContainer: document.getElementById('options-container'),
+            optionsLoading: document.getElementById('options-loading'),
+            feedback: document.getElementById('feedback'),
+            timerDisplay: document.getElementById('time-display'),
+            resetBtn: document.getElementById('reset-btn'),
+            totalQuestions: document.getElementById('total-questions'),
+            accuracy: document.getElementById('accuracy'),
+            totalTime: document.getElementById('total-time'),
+            mistakesList: document.getElementById('mistakes-list'),
+            reviewAgainBtn: document.getElementById('review-again'),
+            newGameBtn: document.getElementById('new-game'),
+            bulkWords: document.getElementById('bulk-words'),
+            importWordsBtn: document.getElementById('import-words'),
+            importLoading: document.getElementById('import-loading'),
+            shareLinkSection: document.getElementById('share-link-section'),
+            gameShareLink: document.getElementById('game-share-link'),
+            copyLinkBtn: document.getElementById('copy-link-btn')
+        };
+
+        // 从URL加载单词数据
+        function loadWordsFromUrl() {
+            const hash = window.location.hash.substring(1); // 获取#后的内容
+            if (!hash) return false;
+            
+            try {
+                // 解码Base64数据
+                const decoded = atob(hash);
+                const words = JSON.parse(decoded);
+                
+                if (Array.isArray(words) && words.length > 0) {
+                    gameData.words = words;
+                    updateWordList();
+                    
+                    // 启用开始游戏按钮
+                    elements.startGameBtn.disabled = false;
+                    elements.startGameBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    
+                    return true;
+                }
+            } catch (e) {
+                console.error('从URL加载单词失败:', e);
+            }
+            
+            return false;
+        }
+
+        // 生成游戏分享链接
+        function generateShareLink() {
+            if (gameData.words.length === 0) return;
+            
+            try {
+                // 将单词数据转换为Base64编码
+                const wordsStr = JSON.stringify(gameData.words);
+                const encoded = btoa(wordsStr);
+                
+                // 生成包含数据的URL
+                const currentUrl = window.location.origin + window.location.pathname;
+                const shareUrl = `${currentUrl}#${encoded}`;
+                
+                // 显示并设置链接
+                elements.gameShareLink.value = shareUrl;
+                elements.shareLinkSection.classList.remove('hidden');
+                
+                return shareUrl;
+            } catch (e) {
+                console.error('生成分享链接失败:', e);
+                alert('生成分享链接失败，请重试');
+                return null;
+            }
+        }
+
+        // 翻译单词
+        async function translateWord(word) {
+            try {
+                const response = await axios.get('https://api.mymemory.translated.net/get', {
+                    params: {
+                        q: word,
+                        langpair: 'en|zh-CN'
+                    }
+                });
+                
+                if (response.data.responseStatus === 200 && response.data.responseData) {
+                    return response.data.responseData.translatedText;
+                }
+                
+                // 常见单词预设释义
+                const commonWords = {
+                    "apple": "苹果",
+                    "banana": "香蕉",
+                    "book": "书",
+                    "computer": "电脑",
+                    "friend": "朋友",
+                    "happy": "高兴的",
+                    "school": "学校",
+                    "teacher": "老师",
+                    "student": "学生",
+                    "water": "水",
+                    "family": "家庭",
+                    "mother": "母亲",
+                    "father": "父亲",
+                    "sister": "姐妹",
+                    "brother": "兄弟"
+                };
+                
+                return commonWords[word.toLowerCase()] || `[请手动添加释义: ${word}]`;
+            } catch (error) {
+                console.error('翻译失败:', error);
+                return `[翻译失败: ${word}]`;
+            }
+        }
+
+        // 从本地词库生成随机中文词汇
+        function generateLocalRandomWords(count, excludeWord) {
+            // 复制并打乱本地词库
+            const shuffled = [...localRandomWords].sort(() => 0.5 - Math.random());
+            
+            // 筛选出与正确答案不同的词汇
+            const result = [];
+            for (const word of shuffled) {
+                if (word !== excludeWord && !result.includes(word)) {
+                    result.push(word);
+                    if (result.length === count) break;
+                }
+            }
+            
+            // 确保获得足够数量的随机词
+            while (result.length < count) {
+                // 生成随机汉字组合
+                const randomChars = '甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥金木水火土天地日月星辰风雨雷电花草树木鸟兽虫鱼';
+                let randomWord = '';
+                const length = Math.floor(Math.random() * 2) + 1; // 1-2个字符
+                for (let i = 0; i < length; i++) {
+                    randomWord += randomChars.charAt(Math.floor(Math.random() * randomChars.length));
+                }
+                if (randomWord !== excludeWord && !result.includes(randomWord)) {
+                    result.push(randomWord);
+                }
+            }
+            
+            return result;
+        }
+
+        // 动态生成随机中文词汇作为错误选项，多API备选
+        async function generateRandomChineseWords(count, excludeWord) {
+            // 设置API请求超时时间为1.5秒
+            const apiTimeout = 1500;
+            
+            try {
+                // 尝试多个API，直到成功或全部失败
+                for (const api of wordApis) {
+                    try {
+                        // 创建超时Promise
+                        const timeoutPromise = new Promise((_, reject) => {
+                            setTimeout(() => reject(new Error('API超时')), apiTimeout);
+                        });
+                        
+                        // 发送请求
+                        let response;
+                        if (api.includes('api-ninjas')) {
+                            // 特殊处理需要API密钥的接口
+                            response = await Promise.race([
+                                axios.get(api, {
+                                    headers: { 'X-Api-Key': 'YOUR_API_KEY' } // 实际使用时需要替换为有效密钥
+                                }),
+                                timeoutPromise
+                            ]);
+                        } else {
+                            response = await Promise.race([
+                                axios.get(api),
+                                timeoutPromise
+                            ]);
+                        }
+                        
+                        // 处理不同API的响应格式
+                        let word;
+                        if (api.includes('random-word-api')) {
+                            word = response.data[0];
+                        } else if (api.includes('hitokoto')) {
+                            word = response.data.substring(0, 4); // 取前4个字符作为单词
+                        } else if (api.includes('quotable')) {
+                            word = response.data.content.split(' ')[0]; // 取引语的第一个词
+                        }
+                        
+                        if (word && typeof word === 'string' && word.trim() !== '') {
+                            // 如果获取到一个有效词，再获取其他所需数量
+                            const words = [word.trim()];
+                            while (words.length < count) {
+                                const moreWords = await generateRandomChineseWords(1, excludeWord);
+                                if (!words.includes(moreWords[0])) {
+                                    words.push(moreWords[0]);
+                                }
+                            }
+                            return words;
+                        }
+                    } catch (e) {
+                        console.log(`API ${api} 请求失败:`, e.message);
+                        continue; // 尝试下一个API
+                    }
+                }
+                
+                // 如果所有API都失败，使用本地词库
+                console.log('所有API都不可用，使用本地词库');
+                return generateLocalRandomWords(count, excludeWord);
+            } catch (error) {
+                console.log('生成随机词失败，使用本地词库:', error.message);
+                return generateLocalRandomWords(count, excludeWord);
+            }
+        }
+
+        // 批量导入单词并翻译
+        async function importWords() {
+            const text = elements.bulkWords.value.trim();
+            if (!text) {
+                alert('请输入要导入的单词');
+                return;
+            }
+            
+            // 用空格或回车分割单词
+            const words = text.split(/[\s\n]+/).filter(word => word.trim() !== '');
+            
+            if (words.length === 0) {
+                alert('未识别到有效单词');
+                return;
+            }
+            
+            // 显示加载状态
+            elements.importWordsBtn.disabled = true;
+            elements.importLoading.classList.remove('hidden');
+            
+            try {
+                let addedCount = 0;
+                
+                // 逐个翻译并添加单词
+                for (const word of words) {
+                    // 检查单词是否已存在
+                    const exists = gameData.words.some(item => item.word.toLowerCase() === word.toLowerCase());
+                    if (exists) continue;
+                    
+                    // 翻译单词
+                    const meaning = await translateWord(word);
+                    
+                    // 添加到单词列表
+                    gameData.words.push({
+                        word,
+                        correctMeaning: meaning
+                    });
+                    
+                    addedCount++;
+                }
+                
+                // 更新显示
+                updateWordList();
+                
+                // 生成分享链接
+                generateShareLink();
+                
+                // 启用开始游戏按钮
+                if (gameData.words.length > 0) {
+                    elements.startGameBtn.disabled = false;
+                    elements.startGameBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+                
+                alert(`成功导入 ${addedCount} 个单词（已过滤重复单词）`);
+                elements.bulkWords.value = '';
+            } catch (error) {
+                console.error('导入失败:', error);
+                alert('导入过程中发生错误，请重试');
+            } finally {
+                // 隐藏加载状态
+                elements.importWordsBtn.disabled = false;
+                elements.importLoading.classList.add('hidden');
+            }
+        }
+
+        // 编辑单词释义
+        function editWordMeaning(index) {
+            const wordData = gameData.words[index];
+            const newMeaning = prompt(`修改 "${wordData.word}" 的中文释义:`, wordData.correctMeaning);
+            
+            if (newMeaning !== null && newMeaning.trim() !== '') {
+                gameData.words[index].correctMeaning = newMeaning.trim();
+                updateWordList();
+                // 更新分享链接
+                generateShareLink();
+            }
+        }
+
+        // 更新单词列表显示
+        function updateWordList() {
+            elements.wordsContainer.innerHTML = '';
+            
+            if (gameData.words.length === 0) {
+                elements.wordsContainer.innerHTML = '<li class="text-gray-500 italic text-center py-4">尚未添加单词</li>';
+                elements.shareLinkSection.classList.add('hidden');
+                return;
+            }
+            
+            gameData.words.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center bg-light p-3 rounded-lg border border-gray-100';
+                li.innerHTML = `
+                    <div>
+                        <span class="font-semibold">${item.word}</span>
+                        <span class="text-primary ml-2 cursor-pointer edit-meaning" data-index="${index}">
+                            <i class="fa fa-pencil mr-1"></i>${item.correctMeaning}
+                        </span>
+                    </div>
+                    <button class="delete-word text-gray-400 hover:text-danger" data-index="${index}">
+                        <i class="fa fa-times"></i>
+                    </button>
+                `;
+                elements.wordsContainer.appendChild(li);
+            });
+            
+            // 添加编辑和删除事件监听
+            document.querySelectorAll('.edit-meaning').forEach(span => {
+                span.addEventListener('click', (e) => {
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    editWordMeaning(index);
+                });
+            });
+            
+            document.querySelectorAll('.delete-word').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    gameData.words.splice(index, 1);
+                    updateWordList();
+                    
+                    // 更新分享链接
+                    if (gameData.words.length > 0) {
+                        generateShareLink();
+                    }
+                    
+                    // 如果没有单词了，禁用开始游戏按钮
+                    if (gameData.words.length === 0) {
+                        elements.startGameBtn.disabled = true;
+                        elements.startGameBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+            });
+        }
+
+        // 开始游戏
+        function startGame() {
+            gameData.currentWordIndex = 0;
+            gameData.secondsElapsed = 0;
+            gameData.attempts = {};
+            gameData.mistakes = [];
+            
+            // 初始化每个单词的尝试次数
+            gameData.words.forEach((_, index) => {
+                gameData.attempts[index] = 0;
+            });
+            
+            // 显示游戏区域，隐藏输入区域
+            elements.wordInputSection.classList.add('hidden');
+            elements.gameSection.classList.remove('hidden');
+            elements.resetBtn.classList.remove('hidden');
+            
+            // 更新单词计数
+            elements.totalWords.textContent = gameData.words.length;
+            
+            // 加载第一个单词
+            loadWord(gameData.currentWordIndex);
+            
+            // 开始计时
+            startTimer();
+        }
+
+        // 加载单词和选项
+        async function loadWord(index) {
+            const wordData = gameData.words[index];
+            elements.currentWord.textContent = wordData.word;
+            elements.currentWordIndex.textContent = index + 1;
+            
+            // 清空之前的选项和反馈，显示加载状态
+            elements.optionsContainer.innerHTML = '';
+            elements.optionsContainer.appendChild(elements.optionsLoading);
+            elements.feedback.classList.add('hidden');
+            
+            try {
+                // 动态生成两个随机错误选项
+                const wrongMeanings = await generateRandomChineseWords(2, wordData.correctMeaning);
+                
+                // 准备所有选项（正确+错误）
+                const allOptions = [
+                    { text: wordData.correctMeaning, isCorrect: true },
+                    { text: wrongMeanings[0], isCorrect: false },
+                    { text: wrongMeanings[1], isCorrect: false }
+                ];
+                
+                // 随机排序选项
+                allOptions.sort(() => Math.random() - 0.5);
+                
+                // 清空加载状态并创建选项按钮
+                elements.optionsContainer.innerHTML = '';
+                allOptions.forEach((option, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'w-full text-left p-4 border border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5 transition-all btn-hover';
+                    btn.innerHTML = `<span class="font-medium mr-2">${String.fromCharCode(65 + i)}</span>${option.text}`;
+                    btn.dataset.isCorrect = option.isCorrect;
+                    
+                    btn.addEventListener('click', () => checkAnswer(btn, option.isCorrect));
+                    
+                    elements.optionsContainer.appendChild(btn);
+                });
+            } catch (error) {
+                console.error('加载选项失败:', error);
+                elements.optionsContainer.innerHTML = `
+                    <div class="text-center py-8 text-danger">
+                        <i class="fa fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>加载选项失败，请点击刷新重试</p>
+                        <button id="retry-load" class="mt-3 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg">
+                            <i class="fa fa-refresh mr-1"></i> 重试
+                        </button>
+                    </div>
+                `;
+                document.getElementById('retry-load').addEventListener('click', () => loadWord(index));
+            }
+        }
+
+        // 检查答案
+        function checkAnswer(button, isCorrect) {
+            // 增加尝试次数
+            gameData.attempts[gameData.currentWordIndex]++;
+            
+            // 禁用所有选项
+            document.querySelectorAll('#options-container button').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('hover:border-primary', 'hover:bg-primary/5');
+            });
+            
+            // 显示反馈
+            elements.feedback.classList.remove('hidden');
+            
+            if (isCorrect) {
+                // 正确答案
+                button.classList.add('bg-secondary/20', 'border-secondary', 'text-secondary');
+                elements.feedback.textContent = '正确！太棒了！';
+                elements.feedback.className = 'p-4 rounded-lg text-center font-medium bg-secondary/20 text-secondary';
+                
+                // 短暂延迟后自动进入下一题
+                setTimeout(() => {
+                    nextWord();
+                }, 600);
+            } else {
+                // 错误答案
+                button.classList.add('bg-danger/20', 'border-danger', 'text-danger');
+                elements.feedback.textContent = '不正确，请再试一次！';
+                elements.feedback.className = 'p-4 rounded-lg text-center font-medium bg-danger/20 text-danger';
+                
+                // 记录错误
+                if (!gameData.mistakes.includes(gameData.currentWordIndex)) {
+                    gameData.mistakes.push(gameData.currentWordIndex);
+                }
+                
+                // 2秒后重新启用选项
+                setTimeout(() => {
+                    document.querySelectorAll('#options-container button').forEach(btn => {
+                        btn.disabled = false;
+                        btn.classList.add('hover:border-primary', 'hover:bg-primary/5');
+                        btn.classList.remove('bg-danger/20', 'border-danger', 'text-danger');
+                    });
+                    elements.feedback.classList.add('hidden');
+                }, 1500);
+            }
+        }
+
+        // 下一个单词
+        function nextWord() {
+            gameData.currentWordIndex++;
+            
+            if (gameData.currentWordIndex < gameData.words.length) {
+                loadWord(gameData.currentWordIndex);
+            } else {
+                // 游戏结束
+                endGame();
+            }
+        }
+
+        // 结束游戏
+        function endGame() {
+            // 停止计时
+            stopTimer();
+            
+            // 隐藏游戏区域，显示结果区域
+            elements.gameSection.classList.add('hidden');
+            elements.resultsSection.classList.remove('hidden');
+            
+            // 计算正确率
+            const totalCorrect = gameData.words.length - gameData.mistakes.length;
+            const accuracyRate = Math.round((totalCorrect / gameData.words.length) * 100);
+            
+            // 更新结果统计
+            elements.totalQuestions.textContent = gameData.words.length;
+            elements.accuracy.textContent = `${accuracyRate}%`;
+            
+            // 格式化总时间
+            const minutes = Math.floor(gameData.secondsElapsed / 60);
+            const seconds = gameData.secondsElapsed % 60;
+            elements.totalTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // 显示错误单词
+            if (gameData.mistakes.length === 0) {
+                elements.mistakesList.innerHTML = '<p class="text-center text-green-600 py-4">恭喜！没有错误单词！</p>';
+            } else {
+                elements.mistakesList.innerHTML = '';
+                gameData.mistakes.forEach(index => {
+                    const wordData = gameData.words[index];
+                    const div = document.createElement('div');
+                    div.className = 'bg-light p-4 rounded-lg border border-danger/20';
+                    div.innerHTML = `
+                        <div class="font-semibold text-lg mb-1">${wordData.word}</div>
+                        <div class="text-gray-700">正确释义: <span class="text-secondary font-medium">${wordData.correctMeaning}</span></div>
+                        <div class="text-gray-600 text-sm mt-1">尝试次数: ${gameData.attempts[index]}</div>
+                    `;
+                    elements.mistakesList.appendChild(div);
+                });
+            }
+        }
+
+        // 开始计时器
+        function startTimer() {
+            gameData.startTime = new Date();
+            gameData.timerInterval = setInterval(() => {
+                gameData.secondsElapsed++;
+                const minutes = Math.floor(gameData.secondsElapsed / 60);
+                const seconds = gameData.secondsElapsed % 60;
+                elements.timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // 停止计时器
+        function stopTimer() {
+            clearInterval(gameData.timerInterval);
+        }
+
+        // 复制链接到剪贴板
+        function copyLinkToClipboard() {
+            const link = elements.gameShareLink.value;
+            if (!link) return;
+            
+            navigator.clipboard.writeText(link).then(() => {
+                // 显示复制成功提示
+                const originalText = elements.copyLinkBtn.innerHTML;
+                elements.copyLinkBtn.innerHTML = '<i class="fa fa-check mr-1"></i>已复制';
+                elements.copyLinkBtn.classList.remove('bg-primary', 'hover:bg-primary/90');
+                elements.copyLinkBtn.classList.add('bg-secondary');
+                
+                setTimeout(() => {
+                    elements.copyLinkBtn.innerHTML = originalText;
+                    elements.copyLinkBtn.classList.remove('bg-secondary');
+                    elements.copyLinkBtn.classList.add('bg-primary', 'hover:bg-primary/90');
+                }, 2000);
+            }).catch(err => {
+                console.error('无法复制链接: ', err);
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        // 事件监听器
+        elements.startGameBtn.addEventListener('click', startGame);
+        elements.resetBtn.addEventListener('click', () => {
+            if (confirm('确定要重新开始游戏吗？')) {
+                stopTimer();
+                startGame();
+            }
+        });
+
+        elements.reviewAgainBtn.addEventListener('click', () => {
+            // 只保留错误的单词进行重新练习
+            const mistakeWords = gameData.mistakes.map(index => gameData.words[index]);
+            gameData.words = mistakeWords;
+            
+            // 更新分享链接（针对错题集）
+            generateShareLink();
+            
+            elements.resultsSection.classList.add('hidden');
+            startGame();
+        });
+
+        elements.newGameBtn.addEventListener('click', () => {
+            elements.resultsSection.classList.add('hidden');
+            elements.resetBtn.classList.add('hidden');
+            elements.wordInputSection.classList.remove('hidden');
+        });
+
+        // 批量导入单词事件
+        elements.importWordsBtn.addEventListener('click', importWords);
+        
+        // 复制链接事件
+        elements.copyLinkBtn.addEventListener('click', copyLinkToClipboard);
+
+        // 初始化 - 检查URL中是否有单词数据
+        window.addEventListener('load', () => {
+            // 尝试从URL加载单词数据
+            const loaded = loadWordsFromUrl();
+            if (!loaded) {
+                updateWordList();
+            }
+        });
+    </script>
+</body>
+</html>
