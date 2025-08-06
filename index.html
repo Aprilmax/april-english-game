@@ -14,7 +14,7 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#7B61FF', // 紫色主色调，适合英语学习类应用
+                        primary: '#7B61FF', // 紫色主色调
                         secondary: '#36D399',
                         danger: '#F87272',
                         neutral: '#64748B',
@@ -184,52 +184,27 @@
     </footer>
 
     <script>
-        // 大幅扩展的本地随机中文词汇库
+        // 扩展的本地随机中文词汇库（确保错误选项为中文）
         const localRandomWords = [
-            // 动作类
-            "飞翔", "跑步", "跳跃", "游泳", "舞蹈", "歌唱", "绘画", "写作", "阅读", "计算",
-            "思考", "学习", "教学", "工作", "休息", "玩耍", "战斗", "防御", "进攻", "撤退",
-            "购买", "销售", "交换", "赠送", "接受", "拒绝", "创造", "破坏", "建设", "拆除",
+            // 自然事物
+            "森林", "溪流", "晚霞", "晨雾", "星空", "秋叶", "霜花", "雨露", "竹林", "麦田",
+            "山脉", "海洋", "沙漠", "平原", "岛屿", "峡谷", "瀑布", "湖泊", "草原", "沼泽",
             
-            // 自然类
-            "阳光", "月亮", "星星", "云朵", "彩虹", "雷电", "风雨", "冰雪", "火焰", "水滴",
-            "高山", "大海", "森林", "沙漠", "草原", "河流", "湖泊", "岛屿", "峡谷", "平原",
-            "岩石", "土壤", "空气", "氧气", "二氧化碳", "植物", "花朵", "果实", "种子", "根须",
+            // 人文生活
+            "春联", "窗花", "茶汤", "墨香", "竹椅", "蒲扇", "香囊", "铜镜", "毛笔", "宣纸",
+            "陶瓷", "丝绸", "刺绣", "木雕", "石刻", "剪纸", "风筝", "灯笼", "筷子", "算盘",
             
-            // 交通工具
-            "汽车", "火车", "飞机", "轮船", "自行车", "火箭", "潜艇", "马车", "摩托车", "电动车",
-            "公交车", "出租车", "货车", "卡车", "地铁", "轻轨", "缆车", "渡船", "热气球", "直升机",
+            // 情感抽象
+            "眷恋", "憧憬", "怅惘", "顿悟", "静谧", "喧嚣", "热忱", "淡漠", "喜悦", "忧伤",
+            "愤怒", "惊讶", "恐惧", "爱恋", "憎恨", "希望", "绝望", "勇气", "胆怯", "智慧",
             
-            // 食物
-            "苹果", "香蕉", "橙子", "西瓜", "草莓", "葡萄", "菠萝", "芒果", "荔枝", "桃子",
-            "米饭", "面条", "面包", "牛奶", "鸡蛋", "牛肉", "猪肉", "鸡肉", "鱼肉", "蔬菜",
+            // 动植物
+            "锦鲤", "麋鹿", "雏菊", "紫藤", "白鹭", "幼鹿", "山茶", "桔梗", "狸猫", "竹鼠",
+            "熊猫", "老虎", "狮子", "大象", "猴子", "兔子", "蝴蝶", "蜜蜂", "玫瑰", "百合",
             
-            // 动物
-            "老虎", "狮子", "大象", "熊猫", "猴子", "兔子", "狗", "猫", "鸟", "鱼",
-            "蛇", "青蛙", "蚂蚁", "蜜蜂", "蝴蝶", "蜻蜓", "蜘蛛", "老鼠", "牛", "羊",
-            
-            // 颜色
-            "红色", "蓝色", "绿色", "黄色", "紫色", "黑色", "白色", "灰色", "粉色", "橙色",
-            "棕色", "青色", "金色", "银色", "米色", "深蓝色", "浅蓝色", "浅绿色",
-            
-            // 情感
-            "快乐", "悲伤", "愤怒", "惊讶", "恐惧", "爱", "恨", "喜欢", "讨厌", "平静",
-            "兴奋", "沮丧", "希望", "绝望", "信任", "怀疑", "满意", "失望", "骄傲", "谦虚",
-            
-            // 时间与季节
-            "春天", "夏天", "秋天", "冬天", "早晨", "中午", "晚上", "昨天", "今天", "明天",
-            "星期", "月份", "年份", "小时", "分钟", "秒钟", "过去", "现在", "未来",
-            
-            // 地点
-            "学校", "医院", "商店", "公园", "家", "办公室", "工厂", "农场", "图书馆", "博物馆",
-            "电影院", "剧院", "餐馆", "酒店", "银行", "邮局", "车站", "机场", "港口", "市场"
-        ];
-
-        // 多个备用API，提高联网生成成功率
-        const wordApis = [
-            'https://random-word-api.vercel.app/api?words=1&lang=zh',
-            'https://v1.hitokoto.cn?c=f&encode=text',
-            'https://api.quotable.io/random?tags=word'
+            // 日常物品
+            "陶碗", "竹篮", "铜锁", "砚台", "灯笼", "折扇", "草鞋", "木梳", "瓷瓶", "藤箱",
+            "书本", "钢笔", "电脑", "手机", "桌子", "椅子", "杯子", "盘子", "衣服", "鞋子"
         ];
 
         // 游戏数据存储
@@ -306,10 +281,15 @@
             try {
                 // 将单词数据转换为Base64编码
                 const wordsStr = JSON.stringify(gameData.words);
-                const encoded = btoa(wordsStr);
+                // 处理特殊字符，确保Base64编码正确
+                const encoded = btoa(unescape(encodeURIComponent(wordsStr)));
                 
                 // 生成包含数据的URL
-                const currentUrl = window.location.origin + window.location.pathname;
+                let currentUrl = window.location.href;
+                // 移除可能已存在的hash
+                if (currentUrl.includes('#')) {
+                    currentUrl = currentUrl.split('#')[0];
+                }
                 const shareUrl = `${currentUrl}#${encoded}`;
                 
                 // 显示并设置链接
@@ -319,12 +299,13 @@
                 return shareUrl;
             } catch (e) {
                 console.error('生成分享链接失败:', e);
-                alert('生成分享链接失败，请重试');
+                // 提供更详细的错误信息
+                alert(`生成分享链接失败: ${e.message}\n请尝试减少单词数量或稍后重试`);
                 return null;
             }
         }
 
-        // 翻译单词
+        // 翻译单词（确保返回中文）
         async function translateWord(word) {
             try {
                 const response = await axios.get('https://api.mymemory.translated.net/get', {
@@ -337,35 +318,38 @@
                 if (response.data.responseStatus === 200 && response.data.responseData) {
                     return response.data.responseData.translatedText;
                 }
-                
-                // 常见单词预设释义
-                const commonWords = {
-                    "apple": "苹果",
-                    "banana": "香蕉",
-                    "book": "书",
-                    "computer": "电脑",
-                    "friend": "朋友",
-                    "happy": "高兴的",
-                    "school": "学校",
-                    "teacher": "老师",
-                    "student": "学生",
-                    "water": "水",
-                    "family": "家庭",
-                    "mother": "母亲",
-                    "father": "父亲",
-                    "sister": "姐妹",
-                    "brother": "兄弟"
-                };
-                
-                return commonWords[word.toLowerCase()] || `[请手动添加释义: ${word}]`;
             } catch (error) {
-                console.error('翻译失败:', error);
-                return `[翻译失败: ${word}]`;
+                console.error('翻译API调用失败:', error);
             }
+            
+            // 常见单词预设中文释义（兜底）
+            const commonWords = {
+                "marriage": "婚姻",
+                "elevate": "提升",
+                "usage": "用法",
+                "residence": "居住地",
+                "apple": "苹果",
+                "banana": "香蕉",
+                "book": "书",
+                "computer": "电脑",
+                "friend": "朋友",
+                "happy": "高兴的",
+                "school": "学校",
+                "teacher": "老师",
+                "student": "学生",
+                "water": "水",
+                "family": "家庭",
+                "mother": "母亲",
+                "father": "父亲",
+                "sister": "姐妹",
+                "brother": "兄弟"
+            };
+            
+            return commonWords[word.toLowerCase()] || `[请手动添加释义: ${word}]`;
         }
 
-        // 从本地词库生成随机中文词汇
-        function generateLocalRandomWords(count, excludeWord) {
+        // 生成随机中文词汇作为错误选项（确保是中文）
+        function generateRandomChineseWords(count, excludeWord) {
             // 复制并打乱本地词库
             const shuffled = [...localRandomWords].sort(() => 0.5 - Math.random());
             
@@ -393,73 +377,6 @@
             }
             
             return result;
-        }
-
-        // 动态生成随机中文词汇作为错误选项，多API备选
-        async function generateRandomChineseWords(count, excludeWord) {
-            // 设置API请求超时时间为1.5秒
-            const apiTimeout = 1500;
-            
-            try {
-                // 尝试多个API，直到成功或全部失败
-                for (const api of wordApis) {
-                    try {
-                        // 创建超时Promise
-                        const timeoutPromise = new Promise((_, reject) => {
-                            setTimeout(() => reject(new Error('API超时')), apiTimeout);
-                        });
-                        
-                        // 发送请求
-                        let response;
-                        if (api.includes('api-ninjas')) {
-                            // 特殊处理需要API密钥的接口
-                            response = await Promise.race([
-                                axios.get(api, {
-                                    headers: { 'X-Api-Key': 'YOUR_API_KEY' } // 实际使用时需要替换为有效密钥
-                                }),
-                                timeoutPromise
-                            ]);
-                        } else {
-                            response = await Promise.race([
-                                axios.get(api),
-                                timeoutPromise
-                            ]);
-                        }
-                        
-                        // 处理不同API的响应格式
-                        let word;
-                        if (api.includes('random-word-api')) {
-                            word = response.data[0];
-                        } else if (api.includes('hitokoto')) {
-                            word = response.data.substring(0, 4); // 取前4个字符作为单词
-                        } else if (api.includes('quotable')) {
-                            word = response.data.content.split(' ')[0]; // 取引语的第一个词
-                        }
-                        
-                        if (word && typeof word === 'string' && word.trim() !== '') {
-                            // 如果获取到一个有效词，再获取其他所需数量
-                            const words = [word.trim()];
-                            while (words.length < count) {
-                                const moreWords = await generateRandomChineseWords(1, excludeWord);
-                                if (!words.includes(moreWords[0])) {
-                                    words.push(moreWords[0]);
-                                }
-                            }
-                            return words;
-                        }
-                    } catch (e) {
-                        console.log(`API ${api} 请求失败:`, e.message);
-                        continue; // 尝试下一个API
-                    }
-                }
-                
-                // 如果所有API都失败，使用本地词库
-                console.log('所有API都不可用，使用本地词库');
-                return generateLocalRandomWords(count, excludeWord);
-            } catch (error) {
-                console.log('生成随机词失败，使用本地词库:', error.message);
-                return generateLocalRandomWords(count, excludeWord);
-            }
         }
 
         // 批量导入单词并翻译
@@ -623,7 +540,7 @@
         }
 
         // 加载单词和选项
-        async function loadWord(index) {
+        function loadWord(index) {
             const wordData = gameData.words[index];
             elements.currentWord.textContent = wordData.word;
             elements.currentWordIndex.textContent = index + 1;
@@ -634,8 +551,8 @@
             elements.feedback.classList.add('hidden');
             
             try {
-                // 动态生成两个随机错误选项
-                const wrongMeanings = await generateRandomChineseWords(2, wordData.correctMeaning);
+                // 生成两个随机中文错误选项
+                const wrongMeanings = generateRandomChineseWords(2, wordData.correctMeaning);
                 
                 // 准备所有选项（正确+错误）
                 const allOptions = [
@@ -857,3 +774,4 @@
     </script>
 </body>
 </html>
+    
